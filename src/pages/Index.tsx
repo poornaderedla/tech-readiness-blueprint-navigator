@@ -127,7 +127,7 @@ const Index = () => {
           <Card className="shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <steps[currentStep].icon className="w-6 h-6 text-blue-600" />
+                {React.createElement(steps[currentStep].icon, { className: "w-6 h-6 text-blue-600" })}
                 {steps[currentStep].title}
               </CardTitle>
             </CardHeader>
