@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,12 +14,16 @@ interface RecommendationEngineProps {
 }
 
 const RecommendationEngine = ({ onNext, onPrev, assessmentData }: RecommendationEngineProps) => {
-  // Calculate overall score
-  const psychometricScore = assessmentData.psychometricScore || 0;
-  const technicalScore = assessmentData.technicalScore || 0;
+  // Calculate overall score with proper type handling
+  const psychometricScore = Number(assessmentData.psychometricScore) || 0;
+  const technicalScore = Number(assessmentData.technicalScore) || 0;
   const wiscarScores = assessmentData.wiscarScores || {};
   
-  const wiscarAverage = Object.values(wiscarScores).reduce((sum: number, score: number) => sum + score, 0) / 6;
+  const wiscarValues = Object.values(wiscarScores);
+  const wiscarAverage = wiscarValues.length > 0 
+    ? wiscarValues.reduce((sum: number, score) => sum + Number(score), 0) / 6 
+    : 0;
+    
   const overallScore = Math.round((psychometricScore + technicalScore + wiscarAverage) / 3);
 
   // Determine recommendation
@@ -264,9 +267,9 @@ const RecommendationEngine = ({ onNext, onPrev, assessmentData }: Recommendation
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {Object.entries(wiscarScores).map(([dimension, score]) => (
               <div key={dimension} className="text-center">
-                <div className="text-2xl font-bold text-blue-600">{score}%</div>
+                <div className="text-2xl font-bold text-blue-600">{Number(score)}%</div>
                 <div className="text-sm text-gray-600 capitalize">{dimension}</div>
-                <Progress value={score} className="h-2 mt-2" />
+                <Progress value={Number(score)} className="h-2 mt-2" />
               </div>
             ))}
           </div>

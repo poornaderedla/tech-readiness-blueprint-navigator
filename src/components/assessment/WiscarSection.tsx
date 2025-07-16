@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +14,13 @@ interface WiscarSectionProps {
   updateAssessmentData: (data: any) => void;
   isFirst: boolean;
   isLast: boolean;
+}
+
+interface QuestionOption {
+  question: string;
+  type: string;
+  options?: string[];
+  correct?: number;
 }
 
 const WiscarSection = ({ onNext, onPrev, assessmentData, updateAssessmentData }: WiscarSectionProps) => {
@@ -67,7 +73,7 @@ const WiscarSection = ({ onNext, onPrev, assessmentData, updateAssessmentData }:
     }
   ];
 
-  const questions = {
+  const questions: Record<string, QuestionOption[]> = {
     will: [
       {
         question: "I often stick to learning goals even when it's hard or boring.",
@@ -233,7 +239,7 @@ const WiscarSection = ({ onNext, onPrev, assessmentData, updateAssessmentData }:
       const wiscarScores = {};
       
       dimensions.forEach(dimension => {
-        const dimensionQuestions = questions[dimension.id as keyof typeof questions];
+        const dimensionQuestions = questions[dimension.id];
         let totalScore = 0;
         
         dimensionQuestions.forEach((_, index) => {
@@ -379,13 +385,17 @@ const WiscarSection = ({ onNext, onPrev, assessmentData, updateAssessmentData }:
               </p>
             </div>
 
-            {currentQuestionData.type === 'logic' || currentQuestionData.type === 'problem_solving' || currentQuestionData.type === 'career_preference' || currentQuestionData.type === 'application_preference' ? (
+            {(currentQuestionData.type === 'logic' || 
+              currentQuestionData.type === 'problem_solving' || 
+              currentQuestionData.type === 'career_preference' || 
+              currentQuestionData.type === 'application_preference') && 
+              currentQuestionData.options ? (
               <RadioGroup
                 value={selectedAnswer?.toString()}
                 onValueChange={handleResponse}
                 className="space-y-4"
               >
-                {currentQuestionData.options?.map((option, index) => (
+                {currentQuestionData.options.map((option, index) => (
                   <div key={index} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-blue-50">
                     <RadioGroupItem value={index.toString()} id={`option-${index}`} />
                     <Label htmlFor={`option-${index}`} className="cursor-pointer flex-1 text-gray-700">

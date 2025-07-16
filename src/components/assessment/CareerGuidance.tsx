@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,10 +14,16 @@ interface CareerGuidanceProps {
 }
 
 const CareerGuidance = ({ onPrev, assessmentData }: CareerGuidanceProps) => {
-  const overallScore = Math.round(
-    (assessmentData.psychometricScore + assessmentData.technicalScore + 
-     Object.values(assessmentData.wiscarScores || {}).reduce((sum: number, score: number) => sum + score, 0) / 6) / 3
-  );
+  const psychometricScore = Number(assessmentData.psychometricScore) || 0;
+  const technicalScore = Number(assessmentData.technicalScore) || 0;
+  const wiscarScores = assessmentData.wiscarScores || {};
+  
+  const wiscarValues = Object.values(wiscarScores);
+  const wiscarAverage = wiscarValues.length > 0 
+    ? wiscarValues.reduce((sum: number, score) => sum + Number(score), 0) / 6 
+    : 0;
+    
+  const overallScore = Math.round((psychometricScore + technicalScore + wiscarAverage) / 3);
 
   const careerPaths = [
     {
