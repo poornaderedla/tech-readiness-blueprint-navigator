@@ -18,9 +18,9 @@ const CareerGuidance = ({ onPrev, assessmentData }: CareerGuidanceProps) => {
   const technicalScore = Number(assessmentData.technicalScore) || 0;
   const wiscarScores = assessmentData.wiscarScores || {};
   
-  const wiscarValues = Object.values(wiscarScores);
+  const wiscarValues = Object.values(wiscarScores).map(score => Number(score) || 0);
   const wiscarAverage = wiscarValues.length > 0 
-    ? wiscarValues.reduce((sum: number, score) => sum + Number(score), 0) / 6 
+    ? wiscarValues.reduce((sum: number, score: number) => sum + score, 0) / 6 
     : 0;
     
   const overallScore = Math.round((psychometricScore + technicalScore + wiscarAverage) / 3);

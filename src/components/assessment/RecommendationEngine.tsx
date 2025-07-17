@@ -19,9 +19,9 @@ const RecommendationEngine = ({ onNext, onPrev, assessmentData }: Recommendation
   const technicalScore = Number(assessmentData.technicalScore) || 0;
   const wiscarScores = assessmentData.wiscarScores || {};
   
-  const wiscarValues = Object.values(wiscarScores);
+  const wiscarValues = Object.values(wiscarScores).map(score => Number(score) || 0);
   const wiscarAverage = wiscarValues.length > 0 
-    ? wiscarValues.reduce((sum: number, score) => sum + Number(score), 0) / 6 
+    ? wiscarValues.reduce((sum: number, score: number) => sum + score, 0) / 6 
     : 0;
     
   const overallScore = Math.round((psychometricScore + technicalScore + wiscarAverage) / 3);
@@ -75,10 +75,10 @@ const RecommendationEngine = ({ onNext, onPrev, assessmentData }: Recommendation
       gaps.push("Structured thinking approach");
       gaps.push("Tolerance for complexity");
     }
-    if (wiscarScores.skill < 60) {
+    if (Number(wiscarScores.skill) < 60) {
       gaps.push("Technical skill confidence");
     }
-    if (wiscarScores.will < 60) {
+    if (Number(wiscarScores.will) < 60) {
       gaps.push("Learning persistence");
     }
     
@@ -194,13 +194,13 @@ const RecommendationEngine = ({ onNext, onPrev, assessmentData }: Recommendation
                   <span className="text-sm">Solid technical foundation</span>
                 </div>
               )}
-              {wiscarScores.will >= 60 && (
+              {Number(wiscarScores.will) >= 60 && (
                 <div className="flex items-center gap-2">
                   <Badge variant="secondary" className="bg-purple-100 text-purple-700">Will</Badge>
                   <span className="text-sm">Strong motivation & persistence</span>
                 </div>
               )}
-              {wiscarScores.interest >= 60 && (
+              {Number(wiscarScores.interest) >= 60 && (
                 <div className="flex items-center gap-2">
                   <Badge variant="secondary" className="bg-pink-100 text-pink-700">Interest</Badge>
                   <span className="text-sm">Genuine curiosity for Java</span>
