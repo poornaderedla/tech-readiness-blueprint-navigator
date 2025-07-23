@@ -6,332 +6,336 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Code, Database, Server, Zap } from "lucide-react";
+import { Code, Database, Server, Zap, CheckCircle, XCircle, ArrowRight } from "lucide-react";
 
 interface TechnicalSectionProps {
-  onNext: () => void;
-  onPrev: () => void;
-  assessmentData: any;
-  updateAssessmentData: (data: any) => void;
-  isFirst: boolean;
-  isLast: boolean;
+  onComplete: (data: any) => void;
 }
 
-const TechnicalSection = ({ onNext, onPrev, assessmentData, updateAssessmentData }: TechnicalSectionProps) => {
-  const [currentSubsection, setCurrentSubsection] = useState(0);
+const TechnicalSection = ({ onComplete }: TechnicalSectionProps) => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [responses, setResponses] = useState<{ [key: string]: number }>({});
+  const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [showExplanation, setShowExplanation] = useState(false);
 
-  const subsections = [
+  // Flatten all questions from all subsections into a single array, but keep Java-specific content
+  const questions = [
+    // General Aptitude
     {
-      id: "aptitude",
-      title: "General Aptitude",
-      icon: Zap,
-      description: "Logical reasoning, numerical reasoning, pattern recognition",
-      duration: "10 min",
-      color: "blue"
+      category: 'General Aptitude',
+      question: 'If A = 2, B = 4, and C = A + B, what is C * 2?',
+      options: [
+        { value: '0', label: '8' },
+        { value: '1', label: '10' },
+        { value: '2', label: '12' },
+        { value: '3', label: '14' }
+      ],
+      correct: '2',
+      explanation: 'C = 2 + 4 = 6, so C * 2 = 12'
     },
     {
-      id: "foundation",
-      title: "Foundational Knowledge",
-      icon: Code,
-      description: "Programming logic, OOP principles, HTML/CSS, SQL basics",
-      duration: "8 min",
-      color: "green"
+      category: 'General Aptitude',
+      question: 'What comes next in the sequence: 2, 6, 18, 54, ?',
+      options: [
+        { value: '0', label: '108' },
+        { value: '1', label: '162' },
+        { value: '2', label: '216' },
+        { value: '3', label: '324' }
+      ],
+      correct: '1',
+      explanation: 'Each number is multiplied by 3: 2×3=6, 6×3=18, 18×3=54, 54×3=162'
     },
     {
-      id: "java",
-      title: "Java Stack Specific",
-      icon: Server,
-      description: "Java syntax, Spring Boot, REST APIs, Collections",
-      duration: "12 min",
-      color: "orange"
+      category: 'General Aptitude',
+      question: 'In a flowchart, what does a diamond shape represent?',
+      options: [
+        { value: '0', label: 'Process' },
+        { value: '1', label: 'Decision' },
+        { value: '2', label: 'Input/Output' },
+        { value: '3', label: 'Start/End' }
+      ],
+      correct: '1',
+      explanation: 'Diamond shapes represent decision points in flowcharts'
+    },
+    {
+      category: 'General Aptitude',
+      question: 'If it takes 5 machines 5 minutes to make 5 widgets, how long does it take 100 machines to make 100 widgets?',
+      options: [
+        { value: '0', label: '5 minutes' },
+        { value: '1', label: '20 minutes' },
+        { value: '2', label: '100 minutes' },
+        { value: '3', label: '500 minutes' }
+      ],
+      correct: '0',
+      explanation: 'Each machine makes 1 widget in 5 minutes, so 100 machines make 100 widgets in 5 minutes'
+    },
+    // Foundational Knowledge
+    {
+      category: 'Foundational Knowledge',
+      question: 'Which of the following is NOT a fundamental OOP principle?',
+      options: [
+        { value: '0', label: 'Encapsulation' },
+        { value: '1', label: 'Inheritance' },
+        { value: '2', label: 'Polymorphism' },
+        { value: '3', label: 'Compilation' }
+      ],
+      correct: '3',
+      explanation: 'Compilation is not an OOP principle. The four main principles are Encapsulation, Inheritance, Polymorphism, and Abstraction'
+    },
+    {
+      category: 'Foundational Knowledge',
+      question: 'What is the purpose of a "for" loop?',
+      options: [
+        { value: '0', label: 'To make decisions' },
+        { value: '1', label: 'To repeat code a specific number of times' },
+        { value: '2', label: 'To define functions' },
+        { value: '3', label: 'To handle errors' }
+      ],
+      correct: '1',
+      explanation: 'A for loop is used to repeat code a specific number of times'
+    },
+    {
+      category: 'Foundational Knowledge',
+      question: 'In HTML, which tag is used to create a hyperlink?',
+      options: [
+        { value: '0', label: '<link>' },
+        { value: '1', label: '<url>' },
+        { value: '2', label: '<a>' },
+        { value: '3', label: '<href>' }
+      ],
+      correct: '2',
+      explanation: 'The <a> tag is used to create hyperlinks in HTML'
+    },
+    {
+      category: 'Foundational Knowledge',
+      question: 'What does SQL stand for?',
+      options: [
+        { value: '0', label: 'Structured Query Language' },
+        { value: '1', label: 'System Query Language' },
+        { value: '2', label: 'Standard Query Language' },
+        { value: '3', label: 'Simple Query Language' }
+      ],
+      correct: '0',
+      explanation: 'SQL stands for Structured Query Language'
+    },
+    {
+      category: 'Foundational Knowledge',
+      question: 'Which CSS property is used to change the text color?',
+      options: [
+        { value: '0', label: 'font-color' },
+        { value: '1', label: 'text-color' },
+        { value: '2', label: 'color' },
+        { value: '3', label: 'foreground-color' }
+      ],
+      correct: '2',
+      explanation: "The 'color' property is used to change text color in CSS"
+    },
+    // Java Stack Specific
+    {
+      category: 'Java Stack Specific',
+      question: 'Which of the following is the correct way to declare a String variable in Java?',
+      options: [
+        { value: '0', label: "String str = 'Hello';" },
+        { value: '1', label: 'String str = "Hello";' },
+        { value: '2', label: 'string str = "Hello";' },
+        { value: '3', label: 'Str str = "Hello";' }
+      ],
+      correct: '1',
+      explanation: 'In Java, strings are declared with double quotes and String with capital S'
+    },
+    {
+      category: 'Java Stack Specific',
+        question: "What is the purpose of the 'try-catch' block in Java?",
+      options: [
+        { value: '0', label: 'To define methods' },
+        { value: '1', label: 'To handle exceptions' },
+        { value: '2', label: 'To create loops' },
+        { value: '3', label: 'To declare variables' }
+      ],
+      correct: '1',
+      explanation: 'Try-catch blocks are used to handle exceptions in Java'
+    },
+    {
+      category: 'Java Stack Specific',
+      question: 'Which interface is commonly used for storing key-value pairs in Java?',
+      options: [
+        { value: '0', label: 'List' },
+        { value: '1', label: 'Set' },
+        { value: '2', label: 'Map' },
+        { value: '3', label: 'Queue' }
+      ],
+      correct: '2',
+      explanation: 'The Map interface is used for key-value pair storage'
+    },
+    {
+      category: 'Java Stack Specific',
+      question: 'What does REST stand for in web development?',
+      options: [
+        { value: '0', label: 'Representational State Transfer' },
+        { value: '1', label: 'Remote State Transfer' },
+        { value: '2', label: 'Relational State Transfer' },
+        { value: '3', label: 'Responsive State Transfer' }
+      ],
+      correct: '0',
+      explanation: 'REST stands for Representational State Transfer'
+    },
+    {
+      category: 'Java Stack Specific',
+      question: 'In Spring Boot, what annotation is used to mark a class as a REST controller?',
+      options: [
+        { value: '0', label: '@Controller' },
+        { value: '1', label: '@RestController' },
+        { value: '2', label: '@Service' },
+        { value: '3', label: '@Component' }
+      ],
+      correct: '1',
+      explanation: '@RestController combines @Controller and @ResponseBody for REST endpoints'
+    },
+    {
+      category: 'Java Stack Specific',
+      question: 'What is JSON primarily used for?',
+      options: [
+        { value: '0', label: 'Database storage' },
+        { value: '1', label: 'Data interchange' },
+        { value: '2', label: 'User interface' },
+        { value: '3', label: 'Security' }
+      ],
+      correct: '1',
+      explanation: 'JSON (JavaScript Object Notation) is primarily used for data interchange'
     }
   ];
 
-  const questions = {
-    aptitude: [
-      {
-        question: "If A = 2, B = 4, and C = A + B, what is C * 2?",
-        options: ["8", "10", "12", "14"],
-        correct: 2,
-        explanation: "C = 2 + 4 = 6, so C * 2 = 12"
-      },
-      {
-        question: "What comes next in the sequence: 2, 6, 18, 54, ?",
-        options: ["108", "162", "216", "324"],
-        correct: 1,
-        explanation: "Each number is multiplied by 3: 2×3=6, 6×3=18, 18×3=54, 54×3=162"
-      },
-      {
-        question: "In a flowchart, what does a diamond shape represent?",
-        options: ["Process", "Decision", "Input/Output", "Start/End"],
-        correct: 1,
-        explanation: "Diamond shapes represent decision points in flowcharts"
-      },
-      {
-        question: "If it takes 5 machines 5 minutes to make 5 widgets, how long does it take 100 machines to make 100 widgets?",
-        options: ["5 minutes", "20 minutes", "100 minutes", "500 minutes"],
-        correct: 0,
-        explanation: "Each machine makes 1 widget in 5 minutes, so 100 machines make 100 widgets in 5 minutes"
-      }
-    ],
-    foundation: [
-      {
-        question: "Which of the following is NOT a fundamental OOP principle?",
-        options: ["Encapsulation", "Inheritance", "Polymorphism", "Compilation"],
-        correct: 3,
-        explanation: "Compilation is not an OOP principle. The four main principles are Encapsulation, Inheritance, Polymorphism, and Abstraction"
-      },
-      {
-        question: "What is the purpose of a 'for' loop?",
-        options: ["To make decisions", "To repeat code a specific number of times", "To define functions", "To handle errors"],
-        correct: 1,
-        explanation: "A for loop is used to repeat code a specific number of times"
-      },
-      {
-        question: "In HTML, which tag is used to create a hyperlink?",
-        options: ["<link>", "<url>", "<a>", "<href>"],
-        correct: 2,
-        explanation: "The <a> tag is used to create hyperlinks in HTML"
-      },
-      {
-        question: "What does SQL stand for?",
-        options: ["Structured Query Language", "System Query Language", "Standard Query Language", "Simple Query Language"],
-        correct: 0,
-        explanation: "SQL stands for Structured Query Language"
-      },
-      {
-        question: "Which CSS property is used to change the text color?",
-        options: ["font-color", "text-color", "color", "foreground-color"],
-        correct: 2,
-        explanation: "The 'color' property is used to change text color in CSS"
-      }
-    ],
-    java: [
-      {
-        question: "Which of the following is the correct way to declare a String variable in Java?",
-        options: ["String str = 'Hello';", "String str = \"Hello\";", "string str = \"Hello\";", "Str str = \"Hello\";"],
-        correct: 1,
-        explanation: "In Java, strings are declared with double quotes and String with capital S"
-      },
-      {
-        question: "What is the purpose of the 'try-catch' block in Java?",
-        options: ["To define methods", "To handle exceptions", "To create loops", "To declare variables"],
-        correct: 1,
-        explanation: "Try-catch blocks are used to handle exceptions in Java"
-      },
-      {
-        question: "Which interface is commonly used for storing key-value pairs in Java?",
-        options: ["List", "Set", "Map", "Queue"],
-        correct: 2,
-        explanation: "The Map interface is used for key-value pair storage"
-      },
-      {
-        question: "What does REST stand for in web development?",
-        options: ["Representational State Transfer", "Remote State Transfer", "Relational State Transfer", "Responsive State Transfer"],
-        correct: 0,
-        explanation: "REST stands for Representational State Transfer"
-      },
-      {
-        question: "In Spring Boot, what annotation is used to mark a class as a REST controller?",
-        options: ["@Controller", "@RestController", "@Service", "@Component"],
-        correct: 1,
-        explanation: "@RestController combines @Controller and @ResponseBody for REST endpoints"
-      },
-      {
-        question: "What is JSON primarily used for?",
-        options: ["Database storage", "Data interchange", "User interface", "Security"],
-        correct: 1,
-        explanation: "JSON (JavaScript Object Notation) is primarily used for data interchange"
-      }
-    ]
-  };
+  const progress = ((currentQuestion + 1) / questions.length) * 100;
 
-  const getCurrentQuestions = () => {
-    const subsectionId = subsections[currentSubsection].id;
-    return questions[subsectionId as keyof typeof questions];
-  };
-
-  const handleResponse = (value: string) => {
-    const key = `${subsections[currentSubsection].id}_${currentQuestion}`;
-    setResponses(prev => ({
+  const handleAnswerChange = (value: string) => {
+    setAnswers(prev => ({
       ...prev,
-      [key]: parseInt(value)
+      [currentQuestion]: value
     }));
+    setShowExplanation(false);
   };
 
-  const nextQuestion = () => {
-    const currentQuestions = getCurrentQuestions();
-    
-    if (currentQuestion < currentQuestions.length - 1) {
-      setCurrentQuestion(currentQuestion + 1);
-    } else if (currentSubsection < subsections.length - 1) {
-      setCurrentSubsection(currentSubsection + 1);
-      setCurrentQuestion(0);
+  const handleNext = () => {
+    if (currentQuestion < questions.length - 1) {
+      setCurrentQuestion(prev => prev + 1);
+      setShowExplanation(false);
     } else {
-      // Calculate technical score
+      // Calculate score and complete
       let totalCorrect = 0;
-      let totalQuestions = 0;
-      
-      Object.entries(questions).forEach(([sectionId, sectionQuestions]) => {
-        sectionQuestions.forEach((q, index) => {
-          const key = `${sectionId}_${index}`;
-          if (responses[key] === q.correct) {
-            totalCorrect++;
-          }
-          totalQuestions++;
-        });
+      questions.forEach((q, idx) => {
+        if (answers[idx] === q.correct) totalCorrect++;
       });
-      
-      const technicalScore = Math.round((totalCorrect / totalQuestions) * 100);
-      
-      updateAssessmentData({
-        technicalScore,
-        technicalResponses: responses
+      const overallScore = Math.round((totalCorrect / questions.length) * 100);
+      onComplete({
+        overall: overallScore,
+        correctAnswers: totalCorrect,
+        totalQuestions: questions.length,
+        answers
       });
-      
-      onNext();
     }
   };
 
-  const prevQuestion = () => {
-    if (currentQuestion > 0) {
-      setCurrentQuestion(currentQuestion - 1);
-    } else if (currentSubsection > 0) {
-      setCurrentSubsection(currentSubsection - 1);
-      const prevSubsectionId = subsections[currentSubsection - 1].id;
-      setCurrentQuestion(questions[prevSubsectionId as keyof typeof questions].length - 1);
-    } else {
-      onPrev();
-    }
+  const showAnswer = () => {
+    setShowExplanation(true);
   };
 
-  const currentQuestions = getCurrentQuestions();
-  const currentQuestionData = currentQuestions[currentQuestion];
-  const currentSubsectionData = subsections[currentSubsection];
-  const Icon = currentSubsectionData.icon;
-
-  // Calculate progress
-  let totalQuestions = 0;
-  let completedQuestions = 0;
-  
-  Object.values(questions).forEach(sectionQuestions => {
-    totalQuestions += sectionQuestions.length;
-  });
-  
-  for (let i = 0; i < currentSubsection; i++) {
-    const sectionId = subsections[i].id;
-    completedQuestions += questions[sectionId as keyof typeof questions].length;
-  }
-  completedQuestions += currentQuestion;
-  
-  const progress = ((completedQuestions + 1) / totalQuestions) * 100;
-
-  const key = `${currentSubsectionData.id}_${currentQuestion}`;
-  const selectedAnswer = responses[key];
+  const currentAnswer = answers[currentQuestion];
+  const isCorrect = currentAnswer === questions[currentQuestion].correct;
+  const canProceed = currentAnswer !== undefined;
+  const isLastQuestion = currentQuestion === questions.length - 1;
 
   return (
-    <div className="space-y-6">
-      {/* Section Header */}
-      <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2 flex items-center justify-center gap-2">
-          <Code className="w-6 h-6 text-blue-600" />
-          Technical & Aptitude Assessment
-        </h2>
-        <p className="text-gray-600 mb-4">
-          Testing general aptitude, foundational skills, and Java-specific knowledge
-        </p>
-      </div>
-
-      {/* Subsection Navigation */}
-      <div className="flex justify-center space-x-4 mb-6">
-        {subsections.map((subsection, index) => {
-          const SubIcon = subsection.icon;
-          return (
-            <div
-              key={subsection.id}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium ${
-                index === currentSubsection
-                  ? `bg-${subsection.color}-100 text-${subsection.color}-700 border-2 border-${subsection.color}-300`
-                  : index < currentSubsection
-                  ? "bg-green-100 text-green-700"
-                  : "bg-gray-100 text-gray-500"
-              }`}
-            >
-              <SubIcon className="w-4 h-4" />
-              <span>{subsection.title}</span>
-              <Badge variant="outline" className="text-xs">
-                {subsection.duration}
-              </Badge>
+    <div className="max-w-3xl mx-auto">
+      <Card className="border-2 border-green-200">
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Code className="w-6 h-6 text-green-600" />
+            <span>Technical & Aptitude Assessment</span>
+            </CardTitle>
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm text-gray-600">
+              <span>Question {currentQuestion + 1} of {questions.length}</span>
+              <span>{Math.round(progress)}% Complete</span>
             </div>
-          );
-        })}
-      </div>
-
-      {/* Progress */}
-      <div className="space-y-2">
-        <div className="flex justify-between text-sm text-gray-600">
-          <span>Question {currentQuestion + 1} of {currentQuestions.length} ({currentSubsectionData.title})</span>
-          <span>{Math.round(progress)}% Complete</span>
-        </div>
-        <Progress value={progress} className="h-2" />
-      </div>
-
-      {/* Current Subsection Info */}
-      <Card className={`border-2 border-${currentSubsectionData.color}-200 bg-${currentSubsectionData.color}-50`}>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Icon className={`w-5 h-5 text-${currentSubsectionData.color}-600`} />
-            {currentSubsectionData.title}
-          </CardTitle>
-          <CardDescription>{currentSubsectionData.description}</CardDescription>
+            <Progress value={progress} className="h-2" />
+          </div>
         </CardHeader>
-      </Card>
-
-      {/* Question Card */}
-      <Card className="border-2 border-blue-200">
-        <CardContent className="p-6">
-          <div className="space-y-6">
-            <div className="text-center">
-              <p className="text-lg font-medium text-gray-800 mb-6">
-                {currentQuestionData.question}
-              </p>
+        <CardContent className="space-y-6">
+          <div className="bg-green-50 p-4 rounded-lg">
+            <div className="text-sm font-medium text-green-700 mb-2">
+              {questions[currentQuestion].category}
             </div>
-
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              {questions[currentQuestion].question}
+            </h3>
             <RadioGroup
-              value={selectedAnswer?.toString()}
-              onValueChange={handleResponse}
-              className="space-y-4"
+              value={currentAnswer || ''}
+              onValueChange={handleAnswerChange}
+              className="space-y-3"
             >
-              {currentQuestionData.options.map((option, index) => (
-                <div key={index} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-blue-50">
-                  <RadioGroupItem value={index.toString()} id={`option-${index}`} />
-                  <Label htmlFor={`option-${index}`} className="cursor-pointer flex-1 text-gray-700">
-                    {option}
-                  </Label>
-                </div>
+              {questions[currentQuestion].options.map((option, index) => (
+                <div key={index} className="flex items-center space-x-2">
+                  <RadioGroupItem value={option.value} id={`option-${index}`} />
+                  <Label 
+                    htmlFor={`option-${index}`} 
+                    className={`text-sm cursor-pointer flex-1 py-2 px-3 rounded transition-colors ${
+                      showExplanation && option.value === questions[currentQuestion].correct
+                        ? 'bg-green-200 border-green-400 border'
+                        : showExplanation && currentAnswer === option.value && !isCorrect
+                        ? 'bg-red-200 border-red-400 border'
+                        : 'hover:bg-white/50'
+                    }`}
+                  >
+                    {option.label}
+                    </Label>
+                  </div>
               ))}
             </RadioGroup>
+            {showExplanation && (
+              <div className={`mt-4 p-3 rounded-lg ${isCorrect ? 'bg-green-100 border border-green-300' : 'bg-red-100 border border-red-300'}`}>
+                <div className="flex items-start space-x-2">
+                  {isCorrect ? (
+                    <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
+                  ) : (
+                    <XCircle className="w-5 h-5 text-red-600 mt-0.5" />
+                  )}
+                  <div>
+                    <div className={`font-medium ${isCorrect ? 'text-green-800' : 'text-red-800'}`}>
+                      {isCorrect ? 'Correct!' : 'Incorrect'}
+                    </div>
+                    <div className="text-sm text-gray-700 mt-1">
+                      {questions[currentQuestion].explanation}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="flex justify-between items-center">
+            <div className="text-sm text-gray-500">
+              Category: {questions[currentQuestion].category}
+            </div>
+            <div className="space-x-3">
+              {canProceed && !showExplanation && (
+                <Button 
+                  onClick={showAnswer}
+                  variant="outline"
+                  className="text-gray-600"
+                >
+                  Show Answer
+                </Button>
+              )}
+              <Button 
+                onClick={handleNext}
+                disabled={!canProceed}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                {isLastQuestion ? 'Complete Section' : 'Next Question'}
+                <ArrowRight className="ml-2 w-4 h-4" />
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
-
-      {/* Navigation */}
-      <div className="flex justify-between pt-6">
-        <Button variant="outline" onClick={prevQuestion}>
-          ← Back
-        </Button>
-        <Button 
-          onClick={nextQuestion}
-          disabled={selectedAnswer === undefined}
-          className="px-8"
-        >
-          {currentQuestion === currentQuestions.length - 1 && currentSubsection === subsections.length - 1 
-            ? 'Complete Section' 
-            : 'Next Question'} →
-        </Button>
-      </div>
     </div>
   );
 };

@@ -5,15 +5,10 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Target, Zap, Heart, Brain, TrendingUp, MapPin } from "lucide-react";
+import { Target, Zap, Heart, Brain, TrendingUp, MapPin, ArrowRight } from "lucide-react";
 
 interface WiscarSectionProps {
-  onNext: () => void;
-  onPrev: () => void;
-  assessmentData: any;
-  updateAssessmentData: (data: any) => void;
-  isFirst: boolean;
-  isLast: boolean;
+  onComplete: (data: any) => void;
 }
 
 interface QuestionOption {
@@ -23,422 +18,242 @@ interface QuestionOption {
   correct?: number;
 }
 
-const WiscarSection = ({ onNext, onPrev, assessmentData, updateAssessmentData }: WiscarSectionProps) => {
-  const [currentDimension, setCurrentDimension] = useState(0);
+const WiscarSection = ({ onComplete }: { onComplete: (data: any) => void }) => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [responses, setResponses] = useState<{ [key: string]: number }>({});
+  const [answers, setAnswers] = useState<Record<number, string>>({});
 
-  const dimensions = [
+  // Flattened Java-specific WISCAR questions
+  const questions = [
     {
-      id: "will",
-      title: "Will",
-      icon: Zap,
-      description: "Drive, grit, consistency",
-      color: "red"
+      category: 'Will (Perseverance)',
+      question: "I often stick to learning goals even when it's hard or boring.",
+      options: [
+        { value: '5', label: 'Always true' },
+        { value: '4', label: 'Usually true' },
+        { value: '3', label: 'Sometimes true' },
+        { value: '2', label: 'Rarely true' },
+        { value: '1', label: 'Never true' }
+      ]
     },
     {
-      id: "interest",
-      title: "Interest", 
-      icon: Heart,
-      description: "Curiosity & purpose-fit",
-      color: "pink"
+      category: 'Will (Perseverance)',
+      question: 'I have completed challenging projects or courses in the past.',
+      options: [
+        { value: '5', label: 'Multiple certifications' },
+        { value: '4', label: 'Several courses' },
+        { value: '3', label: 'A few courses' },
+        { value: '2', label: 'One or two' },
+        { value: '1', label: 'None completed' }
+      ]
     },
     {
-      id: "skill",
-      title: "Skill",
-      icon: Target,
-      description: "Current technical/soft skills",
-      color: "blue"
+      category: 'Interest (Long-term)',
+      question: 'I\'m curious about how enterprise applications are built and scaled.',
+      options: [
+        { value: '5', label: 'Very frequently' },
+        { value: '4', label: 'Often' },
+        { value: '3', label: 'Sometimes' },
+        { value: '2', label: 'Rarely' },
+        { value: '1', label: 'Never' }
+      ]
     },
     {
-      id: "cognitive",
-      title: "Cognitive Readiness",
-      icon: Brain,
-      description: "Mental processing for complexity",
-      color: "purple"
+      category: 'Interest (Long-term)',
+      question: 'I enjoy understanding both frontend and backend development.',
+      options: [
+        { value: '5', label: 'Strongly agree' },
+        { value: '4', label: 'Agree' },
+        { value: '3', label: 'Neutral' },
+        { value: '2', label: 'Disagree' },
+        { value: '1', label: 'Strongly disagree' }
+      ]
     },
     {
-      id: "ability",
-      title: "Ability to Learn",
-      icon: TrendingUp,
-      description: "Growth mindset & reflection",
-      color: "green"
+      category: 'Skill (Current Level)',
+      question: 'Rate your confidence in Object-Oriented Programming concepts.',
+      options: [
+        { value: '5', label: 'Advanced (Programming, databases, etc.)' },
+        { value: '4', label: 'Intermediate (Some scripting/coding)' },
+        { value: '3', label: 'Basic (Computer literate, some tools)' },
+        { value: '2', label: 'Beginner (Limited technical experience)' },
+        { value: '1', label: 'No technical background' }
+      ]
     },
     {
-      id: "realWorld",
-      title: "Real-World Alignment",
-      icon: MapPin,
-      description: "Job alignment, use-case clarity",
-      color: "orange"
+      category: 'Skill (Current Level)',
+      question: 'Rate your confidence in database design and SQL queries.',
+      options: [
+        { value: '5', label: 'Extensively (Led projects)' },
+        { value: '4', label: 'Moderately (Participated in projects)' },
+        { value: '3', label: 'Some exposure' },
+        { value: '2', label: 'Very limited' },
+        { value: '1', label: 'No experience' }
+      ]
+    },
+    {
+      category: 'Cognitive Readiness',
+      question: 'I can understand complex relationships between different business processes',
+      options: [
+        { value: '5', label: 'Very easily' },
+        { value: '4', label: 'Usually' },
+        { value: '3', label: 'Sometimes' },
+        { value: '2', label: 'With difficulty' },
+        { value: '1', label: 'Very difficult' }
+      ]
+    },
+    {
+      category: 'Cognitive Readiness',
+      question: 'When faced with a complex problem, I can break it down into smaller parts',
+      options: [
+        { value: '5', label: 'Always' },
+        { value: '4', label: 'Usually' },
+        { value: '3', label: 'Sometimes' },
+        { value: '2', label: 'Rarely' },
+        { value: '1', label: 'Never' }
+      ]
+    },
+    {
+      category: 'Ability to Learn',
+      question: 'When I fail at something, I analyze what went wrong and improve.',
+      options: [
+        { value: '5', label: 'Completely confident' },
+        { value: '4', label: 'Very confident' },
+        { value: '3', label: 'Somewhat confident' },
+        { value: '2', label: 'Not very confident' },
+        { value: '1', label: 'Not confident at all' }
+      ]
+    },
+    {
+      category: 'Ability to Learn',
+      question: 'I actively seek feedback and use it to improve my performance',
+        options: [
+        { value: '5', label: 'Always' },
+        { value: '4', label: 'Usually' },
+        { value: '3', label: 'Sometimes' },
+        { value: '2', label: 'Rarely' },
+        { value: '1', label: 'Never' }
+      ]
+    },
+    {
+      category: 'Real-World Alignment',
+      question: 'Which Java career path appeals to you most?',
+        options: [
+        { value: '5', label: 'Full Stack Developer (Frontend + Backend)' },
+        { value: '4', label: 'Backend Developer (APIs + Business Logic)' },
+        { value: '3', label: 'DevOps Engineer (Deployment + Infrastructure)' },
+        { value: '2', label: 'Enterprise Architect (System Design)' }
+      ]
+    },
+    {
+      category: 'Real-World Alignment',
+      question: 'How important is job market demand in your career choice?',
+        options: [
+        { value: '5', label: 'Very much' },
+        { value: '4', label: 'Quite a bit' },
+        { value: '3', label: 'Somewhat' },
+        { value: '2', label: 'A little' },
+        { value: '1', label: 'Not at all' }
+      ]
     }
   ];
 
-  const questions: Record<string, QuestionOption[]> = {
-    will: [
-      {
-        question: "I often stick to learning goals even when it's hard or boring.",
-        type: "likert"
-      },
-      {
-        question: "I have completed challenging projects or courses in the past.",
-        type: "likert"
-      },
-      {
-        question: "I'm willing to spend evenings and weekends learning Full Stack Java.",
-        type: "likert"
-      }
-    ],
-    interest: [
-      {
-        question: "I'm curious about how enterprise applications are built and scaled.",
-        type: "likert"
-      },
-      {
-        question: "I enjoy understanding both frontend and backend development.",
-        type: "likert"
-      },
-      {
-        question: "I'm excited about working with Java frameworks like Spring Boot.",
-        type: "likert"
-      }
-    ],
-    skill: [
-      {
-        question: "Rate your confidence in Object-Oriented Programming concepts.",
-        type: "confidence"
-      },
-      {
-        question: "Rate your confidence in database design and SQL queries.",
-        type: "confidence"
-      },
-      {
-        question: "Rate your confidence in web development (HTML, CSS, JavaScript).",
-        type: "confidence"
-      }
-    ],
-    cognitive: [
-      {
-        question: "Solve this logic puzzle: If all Bloops are Razzles and all Razzles are Lazzles, are all Bloops Lazzles?",
-        options: ["Yes", "No", "Cannot be determined"],
-        correct: 0,
-        type: "logic"
-      },
-      {
-        question: "You're debugging a complex application with multiple layers. How do you approach it?",
-        options: [
-          "Start randomly checking different parts",
-          "Systematically trace through each layer",
-          "Ask for help immediately",
-          "Use only logs to understand the issue"
-        ],
-        correct: 1,
-        type: "problem_solving"
-      },
-      {
-        question: "How comfortable are you with learning interconnected systems (database + backend + frontend)?",
-        type: "comfort"
-      }
-    ],
-    ability: [
-      {
-        question: "When I fail at something, I analyze what went wrong and improve.",
-        type: "likert"
-      },
-      {
-        question: "I actively seek feedback to improve my skills.",
-        type: "likert"
-      },
-      {
-        question: "I can adapt my learning style based on the material.",
-        type: "likert"
-      }
-    ],
-    realWorld: [
-      {
-        question: "Which Java career path appeals to you most?",
-        options: [
-          "Full Stack Developer (Frontend + Backend)",
-          "Backend Developer (APIs + Business Logic)",
-          "DevOps Engineer (Deployment + Infrastructure)",
-          "Enterprise Architect (System Design)"
-        ],
-        type: "career_preference"
-      },
-      {
-        question: "What type of applications do you want to build?",
-        options: [
-          "E-commerce platforms",
-          "Banking and financial systems",
-          "Healthcare management systems",
-          "Social media platforms"
-        ],
-        type: "application_preference"
-      },
-      {
-        question: "How important is job market demand in your career choice?",
-        type: "importance"
-      }
-    ]
-  };
+  const progress = ((currentQuestion + 1) / questions.length) * 100;
 
-  const getCurrentQuestions = () => {
-    const dimensionId = dimensions[currentDimension].id;
-    return questions[dimensionId as keyof typeof questions];
-  };
-
-  const likertScale = [
-    { value: 1, label: "Strongly Disagree" },
-    { value: 2, label: "Disagree" },
-    { value: 3, label: "Neutral" },
-    { value: 4, label: "Agree" },
-    { value: 5, label: "Strongly Agree" }
-  ];
-
-  const confidenceScale = [
-    { value: 1, label: "Not Confident" },
-    { value: 2, label: "Slightly Confident" },
-    { value: 3, label: "Moderately Confident" },
-    { value: 4, label: "Very Confident" },
-    { value: 5, label: "Extremely Confident" }
-  ];
-
-  const comfortScale = [
-    { value: 1, label: "Very Uncomfortable" },
-    { value: 2, label: "Uncomfortable" },
-    { value: 3, label: "Neutral" },
-    { value: 4, label: "Comfortable" },
-    { value: 5, label: "Very Comfortable" }
-  ];
-
-  const importanceScale = [
-    { value: 1, label: "Not Important" },
-    { value: 2, label: "Slightly Important" },
-    { value: 3, label: "Moderately Important" },
-    { value: 4, label: "Very Important" },
-    { value: 5, label: "Extremely Important" }
-  ];
-
-  const handleResponse = (value: string) => {
-    const key = `${dimensions[currentDimension].id}_${currentQuestion}`;
-    setResponses(prev => ({
+  const handleAnswerChange = (value: string) => {
+    setAnswers(prev => ({
       ...prev,
-      [key]: parseInt(value)
+      [currentQuestion]: value
     }));
   };
 
-  const nextQuestion = () => {
-    const currentQuestions = getCurrentQuestions();
-    
-    if (currentQuestion < currentQuestions.length - 1) {
-      setCurrentQuestion(currentQuestion + 1);
-    } else if (currentDimension < dimensions.length - 1) {
-      setCurrentDimension(currentDimension + 1);
-      setCurrentQuestion(0);
+  const handleNext = () => {
+    if (currentQuestion < questions.length - 1) {
+      setCurrentQuestion(prev => prev + 1);
     } else {
-      // Calculate WISCAR scores
-      const wiscarScores = {};
-      
-      dimensions.forEach(dimension => {
-        const dimensionQuestions = questions[dimension.id];
-        let totalScore = 0;
-        
-        dimensionQuestions.forEach((_, index) => {
-          const key = `${dimension.id}_${index}`;
-          totalScore += responses[key] || 0;
-        });
-        
-        const maxScore = dimensionQuestions.length * 5;
-        wiscarScores[dimension.id] = Math.round((totalScore / maxScore) * 100);
+      // Calculate scores and complete
+      // For demo, just average all answers
+      const totalScore = Object.values(answers).reduce((sum, score) => sum + parseInt(score), 0);
+      const maxScore = questions.length * 5;
+      const overallScore = Math.round((totalScore / maxScore) * 100);
+      onComplete({
+        overall: overallScore,
+        answers
       });
-      
-      updateAssessmentData({
-        wiscarScores,
-        wiscarResponses: responses
-      });
-      
-      onNext();
     }
   };
 
-  const prevQuestion = () => {
-    if (currentQuestion > 0) {
-      setCurrentQuestion(currentQuestion - 1);
-    } else if (currentDimension > 0) {
-      setCurrentDimension(currentDimension - 1);
-      const prevDimensionId = dimensions[currentDimension - 1].id;
-      setCurrentQuestion(questions[prevDimensionId as keyof typeof questions].length - 1);
-    } else {
-      onPrev();
-    }
-  };
-
-  const currentQuestions = getCurrentQuestions();
-  const currentQuestionData = currentQuestions[currentQuestion];
-  const currentDimensionData = dimensions[currentDimension];
-  const Icon = currentDimensionData.icon;
-
-  // Calculate progress
-  let totalQuestions = 0;
-  let completedQuestions = 0;
-  
-  Object.values(questions).forEach(dimensionQuestions => {
-    totalQuestions += dimensionQuestions.length;
-  });
-  
-  for (let i = 0; i < currentDimension; i++) {
-    const dimensionId = dimensions[i].id;
-    completedQuestions += questions[dimensionId as keyof typeof questions].length;
-  }
-  completedQuestions += currentQuestion;
-  
-  const progress = ((completedQuestions + 1) / totalQuestions) * 100;
-
-  const key = `${currentDimensionData.id}_${currentQuestion}`;
-  const selectedAnswer = responses[key];
-
-  const getScale = () => {
-    const questionType = currentQuestionData.type;
-    switch (questionType) {
-      case 'confidence':
-        return confidenceScale;
-      case 'comfort':
-        return comfortScale;
-      case 'importance':
-        return importanceScale;
-      default:
-        return likertScale;
-    }
-  };
+  const canProceed = answers[currentQuestion] !== undefined;
+  const isLastQuestion = currentQuestion === questions.length - 1;
 
   return (
-    <div className="space-y-6">
-      {/* Section Header */}
-      <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2 flex items-center justify-center gap-2">
-          <Target className="w-6 h-6 text-blue-600" />
-          WISCAR Framework Analysis
-        </h2>
-        <p className="text-gray-600 mb-4">
-          Comprehensive readiness evaluation across six key dimensions
-        </p>
-      </div>
-
-      {/* Framework Overview */}
-      <Card className="bg-blue-50 border-blue-200">
+    <div className="max-w-3xl mx-auto">
+      <Card className="border-2 border-orange-200">
         <CardHeader>
-          <CardTitle className="text-blue-900">WISCAR Dimensions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {dimensions.map((dim, index) => {
-              const DimIcon = dim.icon;
-              return (
-                <div
-                  key={dim.id}
-                  className={`p-3 rounded-lg text-center ${
-                    index === currentDimension
-                      ? `bg-${dim.color}-100 border-2 border-${dim.color}-300`
-                      : index < currentDimension
-                      ? "bg-green-100 border-green-300"
-                      : "bg-gray-100"
-                  }`}
-                >
-                  <DimIcon className={`w-6 h-6 mx-auto mb-2 ${
-                    index === currentDimension ? `text-${dim.color}-600` : "text-gray-600"
-                  }`} />
-                  <h4 className="font-semibold text-sm">{dim.title}</h4>
-                  <p className="text-xs text-gray-600">{dim.description}</p>
-                </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Progress */}
-      <div className="space-y-2">
-        <div className="flex justify-between text-sm text-gray-600">
-          <span>Question {currentQuestion + 1} of {currentQuestions.length} ({currentDimensionData.title})</span>
-          <span>{Math.round(progress)}% Complete</span>
-        </div>
-        <Progress value={progress} className="h-2" />
-      </div>
-
-      {/* Current Dimension Info */}
-      <Card className={`border-2 border-${currentDimensionData.color}-200 bg-${currentDimensionData.color}-50`}>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Icon className={`w-5 h-5 text-${currentDimensionData.color}-600`} />
-            {currentDimensionData.title}
-          </CardTitle>
-          <CardDescription>{currentDimensionData.description}</CardDescription>
-        </CardHeader>
-      </Card>
-
-      {/* Question Card */}
-      <Card className="border-2 border-blue-200">
-        <CardContent className="p-6">
-          <div className="space-y-6">
-            <div className="text-center">
-              <p className="text-lg font-medium text-gray-800 mb-6">
-                {currentQuestionData.question}
-              </p>
+          <CardTitle className="flex items-center space-x-2">
+            <Target className="w-6 h-6 text-orange-600" />
+            <span>WISCAR Framework Analysis</span>
+            </CardTitle>
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm text-gray-600">
+              <span>Question {currentQuestion + 1} of {questions.length}</span>
+              <span>{Math.round(progress)}% Complete</span>
             </div>
-
-            {(currentQuestionData.type === 'logic' || 
-              currentQuestionData.type === 'problem_solving' || 
-              currentQuestionData.type === 'career_preference' || 
-              currentQuestionData.type === 'application_preference') && 
-              currentQuestionData.options ? (
+            <Progress value={progress} className="h-2" />
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="bg-orange-50 p-4 rounded-lg">
+            <div className="text-sm font-medium text-orange-700 mb-2">
+              {questions[currentQuestion].category}
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              {questions[currentQuestion].question}
+            </h3>
               <RadioGroup
-                value={selectedAnswer?.toString()}
-                onValueChange={handleResponse}
-                className="space-y-4"
-              >
-                {currentQuestionData.options.map((option, index) => (
-                  <div key={index} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-blue-50">
-                    <RadioGroupItem value={index.toString()} id={`option-${index}`} />
-                    <Label htmlFor={`option-${index}`} className="cursor-pointer flex-1 text-gray-700">
-                      {option}
-                    </Label>
-                  </div>
-                ))}
+              value={answers[currentQuestion] || ''}
+              onValueChange={handleAnswerChange}
+              className="space-y-3"
+            >
+              {questions[currentQuestion].options.map((option, index) => (
+                <div key={index} className="flex items-center space-x-2">
+                  <RadioGroupItem value={option.value} id={`option-${index}`} />
+                  <Label 
+                    htmlFor={`option-${index}`} 
+                    className="text-sm cursor-pointer flex-1 py-2 px-3 rounded hover:bg-white/50 transition-colors"
+                  >
+                    {option.label}
+                      </Label>
+                    </div>
+              ))}
               </RadioGroup>
-            ) : (
-              <RadioGroup
-                value={selectedAnswer?.toString()}
-                onValueChange={handleResponse}
-                className="space-y-4"
-              >
-                {getScale().map((option) => (
-                  <div key={option.value} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-blue-50">
-                    <RadioGroupItem value={option.value.toString()} id={`scale-${option.value}`} />
-                    <Label htmlFor={`scale-${option.value}`} className="cursor-pointer flex-1 text-gray-700">
-                      {option.label}
-                    </Label>
-                  </div>
-                ))}
-              </RadioGroup>
-            )}
+          </div>
+          <div className="flex justify-between items-center">
+            <div className="text-sm text-gray-500">
+              Evaluating: {questions[currentQuestion].category}
+            </div>
+            <Button 
+              onClick={handleNext}
+              disabled={!canProceed}
+              className="bg-orange-600 hover:bg-orange-700"
+            >
+              {isLastQuestion ? 'Complete Assessment' : 'Next Question'}
+              <ArrowRight className="ml-2 w-4 h-4" />
+            </Button>
+          </div>
+          {/* WISCAR Explanation */}
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h4 className="font-semibold text-gray-900 mb-2">WISCAR Framework</h4>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+              <div><strong>W</strong>ill - Perseverance</div>
+              <div><strong>I</strong>nterest - Long-term curiosity</div>
+              <div><strong>S</strong>kill - Current abilities</div>
+              <div><strong>C</strong>ognitive - Problem-solving</div>
+              <div><strong>A</strong>bility - Learning capacity</div>
+              <div><strong>R</strong>eal-world - Job alignment</div>
+            </div>
           </div>
         </CardContent>
       </Card>
-
-      {/* Navigation */}
-      <div className="flex justify-between pt-6">
-        <Button variant="outline" onClick={prevQuestion}>
-          ← Back
-        </Button>
-        <Button 
-          onClick={nextQuestion}
-          disabled={selectedAnswer === undefined}
-          className="px-8"
-        >
-          {currentQuestion === currentQuestions.length - 1 && currentDimension === dimensions.length - 1 
-            ? 'Complete Section' 
-            : 'Next Question'} →
-        </Button>
-      </div>
     </div>
   );
 };
